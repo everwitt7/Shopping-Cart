@@ -1,0 +1,108 @@
+getItems();
+
+function getItems(){
+
+    var eventXmlHttp = new XMLHttpRequest(); // Initialize our XMLHttpRequest instance
+    eventXmlHttp.open("POST", "getItems.php", true);
+    eventXmlHttp.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+    eventXmlHttp.addEventListener("load", function(event){
+
+        var pITEMS = JSON.parse(event.target.responseText);
+        if(pITEMS[0].success){
+
+          var itemArr = [];
+          for(i = 1; i < pITEMS.length; i++){
+            itemArr.push({id:pITEMS[i].item_id, name:pITEMS[i].item_name, desc:pITEMS[i].item_desc});
+          }
+          stupid(itemArr);
+        }
+        else{
+            alert("Failed to retreive events");
+        }
+    }, false);
+    eventXmlHttp.send("dataString"); // Send the data
+}
+
+function stupid(itemArr){
+  var ITEMS = itemArr;
+  let Item = React.createClass({
+    displayName: 'Item',
+    render: function render() {
+        return React.createElement(
+        'li',
+        null,
+        React.createElement(
+          'span',
+           { className: 'itemname' },
+           this.props.name
+        ),
+        React.createElement(
+          'span',
+          { className: 'desc' },
+          this.props.desc
+        ),
+        React.createElement(
+          'form',
+          { action: 'addtocart.php', method: 'POST' },
+          React.createElement(
+            'input',{ type: 'submit', value: 'add to cart' }
+          ),
+          React.createElement(
+            'input',{ type: 'hidden', name: 'item_id', value: this.props.id }
+          )
+        ),
+        React.createElement(
+          'form',
+          { action: 'saveitem.php', method: 'POST' },
+          React.createElement(
+            'input',{ type: 'submit', value: 'Save Item' }
+          ),
+          React.createElement(
+            'input',{ type: 'hidden', name: 'item_id', value: this.props.id }
+          )
+        )
+        );
+    }
+});
+
+var ItemList = React.createClass({
+  displayName: 'ItemList',
+  getInitialState: function getInitialState() {
+    return {
+      displayedItems: ITEMS
+    };
+  },
+  searchHandler: function searchHandler(event) {
+    var searcjQery = event.target.value.toLowerCase(),
+        displayedItems = ITEMS.filter(function (el) {
+      var searchValue = el.name.toLowerCase();
+      return searchValue.indexOf(searcjQery) !== -1;
+    });
+    this.setState({
+      displayedItems: displayedItems
+    });
+  },
+  render: function render() {
+    var items = this.state.displayedItems;
+    return React.createElement(
+      'div',
+      { className: 'holder' },
+      React.createElement('input', { type: 'text', classNAme: 'search', onChange: this.searchHandler }),
+      React.createElement(
+        'ul',
+        null,
+        items.map(function (el) {
+          return React.createElement(Item, {
+            name: el.name,
+            desc: el.desc,
+            id: el.id,
+            atc: "Add to Cart"
+          });
+        })
+      )
+    );
+  }
+});
+
+ReactDOM.render(React.createElement(ItemList, null), document.getElementById('app'));
+}
